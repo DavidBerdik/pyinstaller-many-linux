@@ -1,8 +1,8 @@
 FROM ubuntu:12.04
 SHELL ["/bin/bash", "-i", "-c"]
 
-ARG PYTHON_VERSION=3.7.5
-ARG PYINSTALLER_VERSION=3.6
+ARG PYTHON_VERSION=3.9.0
+ARG PYINSTALLER_VERSION=4.1
 
 COPY entrypoint.sh /entrypoint.sh
 
