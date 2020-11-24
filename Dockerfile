@@ -1,48 +1,62 @@
-# Thanks https://blog.xmatthias.com/compiling-python-3-6-for-centos-5-11-with-openssl/
-# for the major part of this Dockerfile
-FROM centos:5
+FROM ubuntu:12.04
+SHELL ["/bin/bash", "-i", "-c"]
 
-ARG PYINSTALLER_VERSION=3.4
-ARG PYTHON_VERSION=3.6
+ARG PYTHON_VERSION=3.7.5
+ARG PYINSTALLER_VERSION=3.6
 
-# As centos5 has reached end of life, some manipulation are needed
-# to get "yum" behave as expected in the container
-RUN mkdir /var/cache/yum/base/ \
-    && mkdir /var/cache/yum/extras/ \
-    && mkdir /var/cache/yum/updates/ \
-    && mkdir /var/cache/yum/libselinux/ \
-    && echo "http://vault.centos.org/5.11/os/x86_64/" > /var/cache/yum/base/mirrorlist.txt \
-    && echo "http://vault.centos.org/5.11/extras/x86_64/" > /var/cache/yum/extras/mirrorlist.txt \
-    && echo "http://vault.centos.org/5.11/updates/x86_64/" > /var/cache/yum/updates/mirrorlist.txt \
-    && echo "http://vault.centos.org/5.11/centosplus/x86_64/" > /var/cache/yum/libselinux/mirrorlist.txt
-
-# Installing dependencies
-RUN yum install -y gcc gcc44 zlib-devel python-setuptools readline-devel wget make perl
-
-# build and install openssl
-RUN cd /tmp && wget https://www.openssl.org/source/openssl-1.0.2l.tar.gz \
-    && tar xzvpf openssl-1.0.2l.tar.gz && cd openssl-1.0.2l \
-    && ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl \
-    && sed -i.orig '/^CFLAG/s/$/ -fPIC/' Makefile \
-    && make && make test && make install
-
-# or you can use "wget https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tgz" here
-# but it didnt work for me, so we need to use already downloaded one
-COPY ./python-for-docker/Python-3.6.8.tgz /tmp/
 COPY entrypoint.sh /entrypoint.sh
 
-# build and install python${PYTHON_VERSION}
-RUN tar xzvf /tmp/Python-3.6.8.tgz && cd Python-3.6.8 \
-    && ./configure --prefix=/opt/python${PYTHON_VERSION} --enable-shared --with-threads && make altinstall \
-    && ln -s /opt/python${PYTHON_VERSION}/bin/python${PYTHON_VERSION} /usr/local/bin/python${PYTHON_VERSION} \
-    && ln -s /opt/python${PYTHON_VERSION}/bin/pip${PYTHON_VERSION} /usr/local/bin/pip${PYTHON_VERSION}
-
-ENV LD_LIBRARY_PATH=/opt/python${PYTHON_VERSION}/lib
-
-RUN pip${PYTHON_VERSION} install pyinstaller==$PYINSTALLER_VERSION \
-    && rm -rf /tmp/ && chmod +x /entrypoint.sh
-
-RUN mkdir /code
-WORKDIR /code
+RUN \
+    set -x \
+    # update system
+    && apt-get update \
+    # install requirements
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        wget \
+        git \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        zlib1g-dev \
+        libffi-dev \
+        #optional libraries
+        libgdbm-dev \
+        libgdbm3 \
+        uuid-dev \
+        #upx
+        upx \
+        tk-dev \
+        tk \
+        tcl-dev \
+        tcl \
+    # required because openSSL on Ubuntu 12.04 and 14.04 run out of support versions of OpenSSL
+    && mkdir openssl \
+    && cd openssl \
+    # latest version, there won't be anything newer for this
+    && wget https://www.openssl.org/source/openssl-1.0.2u.tar.gz \
+    && tar -xzvf openssl-1.0.2u.tar.gz \
+    && cd openssl-1.0.2u \
+    && ./config --prefix=$HOME/openssl --openssldir=$HOME/openssl shared zlib \
+    && make \
+    && make install \
+    # install pyenv
+    && echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc \
+    && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc \
+    && source ~/.bashrc \
+    && curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash \
+    && echo 'eval "$(pyenv init -)"' >> ~/.bashrc \
+    && source ~/.bashrc \
+    # install python
+    && PATH="$HOME/openssl:$PATH"  CPPFLAGS="-O2 -I$HOME/openssl/include" CFLAGS="-I$HOME/openssl/include/" LDFLAGS="-L$HOME/openssl/lib -Wl,-rpath,$HOME/openssl/lib" LD_LIBRARY_PATH=$HOME/openssl/lib:$LD_LIBRARY_PATH LD_RUN_PATH="$HOME/openssl/lib" CONFIGURE_OPTS="--with-openssl=$HOME/openssl" PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_VERSION \
+    && pyenv global $PYTHON_VERSION \
+    && pip install --upgrade pip \
+    # install pyinstaller
+    && pip install pyinstaller==$PYINSTALLER_VERSION \
+    && mkdir /code/ \
+    && chmod +x /entrypoint.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]

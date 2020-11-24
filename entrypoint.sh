@@ -1,9 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/bash -i
 
-PYTHON_VERSION=3.6
+set -e
+. /root/.bashrc
+cd /code
 
-if [[ -f requirements.txt ]]; then
-    pip3.6 install -r requirements.txt
+if [ -f requirements.txt ]; then
+    pip install -r requirements.txt
 fi
 
-exec /opt/python${PYTHON_VERSION}/bin/pyinstaller $@
+pyinstaller $@
