@@ -29,10 +29,11 @@ RUN \
         uuid-dev \
         #upx
         upx \
-        tk-dev \
-        tk \
-        tcl-dev \
-        tcl \
+        #tk-dev \
+        #tk \
+        #tcl-dev \
+        #tcl \
+        libx11-dev \
     # required because openSSL on Ubuntu 12.04 and 14.04 run out of support versions of OpenSSL
     && mkdir openssl \
     && cd openssl \
@@ -42,6 +43,22 @@ RUN \
     && rm openssl-1.0.2u.tar.gz \
     && cd openssl-1.0.2u \
     && ./config --prefix=$HOME/openssl --openssldir=$HOME/openssl shared zlib \
+    && make \
+    && make install \
+    # The TCL and TK distributions for Ubuntu 12.04 are outdated, so we will compile newer versions ourselves.
+    && cd / \
+    && wget https://netactuate.dl.sourceforge.net/project/tcl/Tcl/8.6.10/tcl8.6.10-src.tar.gz?viasf=1 -O tcl8.6.10-src.tar.gz \
+    && wget https://iweb.dl.sourceforge.net/project/tcl/Tcl/8.6.10/tk8.6.10-src.tar.gz?viasf=1 -O tk8.6.10-src.tar.gz \
+    && tar -xzvf tcl8.6.10-src.tar.gz \
+    && tar -xzvf tk8.6.10-src.tar.gz \
+    && rm tcl8.6.10-src.tar.gz \
+    && rm tk8.6.10-src.tar.gz \
+    && cd /tcl8.6.10/unix \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install \
+    && cd /tk8.6.10/unix \
+    && ./configure --prefix=/usr \
     && make \
     && make install \
     # install pyenv
@@ -57,7 +74,6 @@ RUN \
     && pip install --upgrade pip \
     # install pyinstaller
     && pip install pyinstaller==$PYINSTALLER_VERSION \
-    && mkdir /code/ \
     && chmod +x /entrypoint.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]
