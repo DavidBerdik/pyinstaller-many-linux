@@ -39,6 +39,7 @@ RUN \
     # latest version, there won't be anything newer for this
     && wget https://www.openssl.org/source/openssl-1.0.2u.tar.gz \
     && tar -xzvf openssl-1.0.2u.tar.gz \
+    && rm openssl-1.0.2u.tar.gz \
     && cd openssl-1.0.2u \
     && ./config --prefix=$HOME/openssl --openssldir=$HOME/openssl shared zlib \
     && make \
