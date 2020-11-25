@@ -30,6 +30,8 @@ RUN \
         libxft-dev \
         libfontconfig1-dev \
         libfreetype6-dev \
+    # Clear apt cache
+    && apt-get clean \
     # The OpenSSL distribution for Ubuntu 12.04 is outdated, so we will compile a newer version ourselves.
     && mkdir openssl \
     && cd openssl \
@@ -56,6 +58,9 @@ RUN \
     && ./configure --prefix=/usr \
     && make \
     && make install \
+    # Remove directories containing source code for TCL and TK
+    && cd / \
+    && rm -r /tcl8.6.10 /tk8.6.10 \
     # Install pyenv
     && echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc \
     && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc \
