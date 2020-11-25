@@ -4,8 +4,6 @@ SHELL ["/bin/bash", "-i", "-c"]
 ARG PYTHON_VERSION=3.9.0
 ARG PYINSTALLER_VERSION=4.1
 
-COPY entrypoint.sh /entrypoint.sh
-
 RUN \
     set -x \
     # update system
@@ -71,6 +69,8 @@ RUN \
     && pip install --upgrade pip \
     # install pyinstaller
     && pip install pyinstaller==$PYINSTALLER_VERSION \
+    # Generate entrypoint script and mark as executable
+    && printf '#!/bin/bash -i\n\nset -e\n. /root/.bashrc\ncd /code\n\nif [ -f requirements.txt ]; then\n    pip install -r requirements.txt\nfi\n\npyinstaller $@' > /entrypoint.sh \
     && chmod +x /entrypoint.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]
