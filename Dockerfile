@@ -33,8 +33,7 @@ RUN \
     # Clear apt cache
     && apt-get clean \
     # The OpenSSL distribution for Ubuntu 12.04 is outdated, so we will compile a newer version ourselves.
-    && mkdir openssl \
-    && cd openssl \
+    && cd / \
     && wget https://www.openssl.org/source/openssl-1.0.2u.tar.gz \
     && tar -xzvf openssl-1.0.2u.tar.gz \
     && rm openssl-1.0.2u.tar.gz \
@@ -58,9 +57,9 @@ RUN \
     && ./configure --prefix=/usr \
     && make \
     && make install \
-    # Remove directories containing source code for TCL and TK
+    # Remove directories containing source code for OpenSSL, TCL, and TK
     && cd / \
-    && rm -r /tcl8.6.10 /tk8.6.10 \
+    && rm -r /openssl-1.0.2u /tcl8.6.10 /tk8.6.10 \
     # Install pyenv
     && echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc \
     && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc \
