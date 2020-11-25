@@ -23,17 +23,14 @@ RUN \
         libssl-dev \
         zlib1g-dev \
         libffi-dev \
-        #optional libraries
         libgdbm-dev \
         libgdbm3 \
         uuid-dev \
-        #upx
         upx \
-        #tk-dev \
-        #tk \
-        #tcl-dev \
-        #tcl \
         libx11-dev \
+        libxft-dev \
+        libfontconfig1-dev \
+        libfreetype6-dev \
     # required because openSSL on Ubuntu 12.04 and 14.04 run out of support versions of OpenSSL
     && mkdir openssl \
     && cd openssl \
