@@ -5,10 +5,11 @@ ARG PYTHON_VERSION=3.9.0
 ARG PYINSTALLER_VERSION=4.1
 
 RUN \
+    # Print all commands to the terminal as they are executed
     set -x \
-    # update system
+    # Update system
     && apt-get update \
-    # install requirements
+    # Install necessary packages
     && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
@@ -29,10 +30,9 @@ RUN \
         libxft-dev \
         libfontconfig1-dev \
         libfreetype6-dev \
-    # required because openSSL on Ubuntu 12.04 and 14.04 run out of support versions of OpenSSL
+    # The OpenSSL distribution for Ubuntu 12.04 is outdated, so we will compile a newer version ourselves.
     && mkdir openssl \
     && cd openssl \
-    # latest version, there won't be anything newer for this
     && wget https://www.openssl.org/source/openssl-1.0.2u.tar.gz \
     && tar -xzvf openssl-1.0.2u.tar.gz \
     && rm openssl-1.0.2u.tar.gz \
@@ -56,20 +56,20 @@ RUN \
     && ./configure --prefix=/usr \
     && make \
     && make install \
-    # install pyenv
+    # Install pyenv
     && echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc \
     && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc \
     && source ~/.bashrc \
     && curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash \
     && echo 'eval "$(pyenv init -)"' >> ~/.bashrc \
     && source ~/.bashrc \
-    # install python
+    # Install the Python version defined by PYTHON_VERSION
     && PATH="$HOME/openssl:$PATH"  CPPFLAGS="-O2 -I$HOME/openssl/include" CFLAGS="-I$HOME/openssl/include/" LDFLAGS="-L$HOME/openssl/lib -Wl,-rpath,$HOME/openssl/lib" LD_LIBRARY_PATH=$HOME/openssl/lib:$LD_LIBRARY_PATH LD_RUN_PATH="$HOME/openssl/lib" CONFIGURE_OPTS="--with-openssl=$HOME/openssl" PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_VERSION \
     && pyenv global $PYTHON_VERSION \
     && pip install --upgrade pip \
-    # install pyinstaller
+    # Install the PyInstaller version defined by PYINSTALLER_VERSION
     && pip install pyinstaller==$PYINSTALLER_VERSION \
-    # Generate entrypoint script and mark as executable
+    # Generate the entrypoint script and mark it as executable
     && printf '#!/bin/bash -i\n\nset -e\n. /root/.bashrc\ncd /code\n\nif [ -f requirements.txt ]; then\n    pip install -r requirements.txt\nfi\n\npyinstaller $@' > /entrypoint.sh \
     && chmod +x /entrypoint.sh
 
